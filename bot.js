@@ -21,7 +21,7 @@ if (!BOT_TOKEN) throw new Error("BOT_TOKEN missing");
 if (!APPS_SCRIPT_URL) throw new Error("APPS_SCRIPT_URL missing");
 if (!ADMIN_ID) throw new Error("ADMIN_TELEGRAM_ID missing");
 
-// ── BOT (POLLING ONLY - SIMPLE & STABLE) ─────────────
+// ── BOT ─────────────────────────────────────────────
 const bot = new TelegramBot(BOT_TOKEN, {
   polling: true
 });
@@ -30,7 +30,7 @@ bot.on("polling_error", (err) => {
   console.error("Polling error:", err.message);
 });
 
-// ── EXPRESS (KEEP ALIVE FOR RENDER) ─────────────────
+// ── EXPRESS ─────────────────────────────────────────
 const app = express();
 
 app.get("/", (req, res) => {
@@ -49,12 +49,16 @@ async function sheetRequest(payload) {
       headers: { "Content-Type": "application/json" },
       timeout: 10000
     });
-    console.log("RAW RESPONSE FROM APPS SCRIPT:", res.data);
 
+    console.log("RAW RESPONSE:", res.data);
     return res.data;
+
   } catch (err) {
     console.error("Sheet error:", err.message);
-    return { success: false, message: "Sheet request failed" };
+    return {
+      success: false,
+      message: "Sheet request failed"
+    };
   }
 }
 
@@ -142,6 +146,7 @@ bot.on("callback_query", async (query) => {
       }
     }
 
+    // ── MARK ATTENDANCE ──
     if (data === "mark_present" || data === "mark_leave") {
       const status = data === "mark_present" ? "Present" : "Leave";
 
@@ -154,31 +159,40 @@ bot.on("callback_query", async (query) => {
 
       return bot.sendMessage(
         chatId,
-        result.success ? `Marked ${status}` : "Failed to mark",
+        result.success
+          ? result.message || `Marked ${status}`
+          : "Failed to mark attendance",
         keyboard(isAdmin(userId))
       );
     }
 
+    // ── BALANCE ──
     if (data === "balance") {
       const r = await sheetRequest({ action: "getBalance", telegram_id: userId });
 
       return bot.sendMessage(
         chatId,
-        `Used: ${r.used}/${r.total}\nRemaining: ${r.remaining}`,
+        r.success
+          ? r.message || `Used: ${r.used}/${r.total}\nRemaining: ${r.remaining}`
+          : "Failed to fetch balance",
         keyboard(isAdmin(userId))
       );
     }
 
+    // ── STATUS ──
     if (data === "my_status") {
       const r = await sheetRequest({ action: "getStatus", telegram_id: userId });
 
       return bot.sendMessage(
         chatId,
-        `Present: ${r.present}\nLeave: ${r.leave}`,
+        r.success
+          ? r.message || `Present: ${r.present}\nLeave: ${r.leave}`
+          : "Failed to fetch status",
         keyboard(isAdmin(userId))
       );
     }
 
+    // ── TEAM ──
     if (data === "team") {
       if (!isAdmin(userId)) return bot.sendMessage(chatId, "Admin only");
 
@@ -191,6 +205,7 @@ bot.on("callback_query", async (query) => {
       );
     }
 
+    // ── REPORT ──
     if (data === "report") {
       if (!isAdmin(userId)) return bot.sendMessage(chatId, "Admin only");
 
@@ -202,8 +217,10 @@ bot.on("callback_query", async (query) => {
         keyboard(true)
       );
     }
+
   } catch (err) {
     console.error("Callback error:", err.message);
+    bot.sendMessage(query.message.chat.id, "Something went wrong.");
   }
 });
 

@@ -152,9 +152,10 @@ function markAttendance(id, name, status) {
 
   // If record exists
   if (rowIndex !== -1) {
-    const existingStatus = sheet.getRange(rowIndex, 4).getValue();
+    const existingStatus = String(sheet.getRange(rowIndex, 4).getValue()).trim();
+    const newStatus = String(status).trim();
 
-    if (existingStatus === status) {
+    if (existingStatus === newStatus) {
       return {
         success: true,
         message: "Already marked as " + status,
@@ -172,7 +173,7 @@ function markAttendance(id, name, status) {
     };
   }
 
-  sheet.appendRow([id, name, today, status, now]);
+  sheet.appendRow([id, name, today, String(status).trim(), now]);
 
   return {
     success: true,
