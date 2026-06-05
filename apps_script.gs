@@ -1,13 +1,51 @@
 const SHEET_ID = "1nAaw2uO15X1SDfiAM9AYAssNm9iCSoqNtDgtjHawj0A";
 const LEAVES_PER_MONTH = 4;
 
+/* ---------------- UTIL ---------------- */
+
+function todayStr() {
+  return Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd");
+}
+
+function nowStr() {
+  return Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd HH:mm:ss");
+}
+
+function normalizeDate(value) {
+  if (!value) return "";
+
+  if (Object.prototype.toString.call(value) === "[object Date]") {
+    return Utilities.formatDate(value, "Asia/Kolkata", "yyyy-MM-dd");
+  }
+
+  try {
+    return Utilities.formatDate(new Date(value), "Asia/Kolkata", "yyyy-MM-dd");
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function findTodayRow(sheet, id, today) {
+  const data = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+    const rowId = String(data[i][0]);
+    const rowDate = normalizeDate(data[i][2]);
+
+    if (rowId === String(id) && rowDate === today) {
+      return i + 1;
+    }
+  }
+  return -1;
+}
+
 /* ---------------- ENTRY POINT ---------------- */
 
 function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  let result;
-
   try {
+    const data = JSON.parse(e.postData.contents);
+    let result;
+
     switch (data.action) {
 
       case "register":
@@ -42,13 +80,18 @@ function doPost(e) {
         result = { success: false, message: "Unknown action" };
     }
 
-  } catch (err) {
-    result = { success: false, message: err.toString() };
-  }
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
 
-  return ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: err.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 /* ---------------- SHEETS ---------------- */
@@ -89,33 +132,53 @@ function registerEmployee(id, name) {
     }
   }
 
-  const today = Utilities.formatDate(new Date(), "Asia/Kolkata", "dd/MM/yyyy");
-  sheet.appendRow([id, name, today]);
+  sheet.appendRow([id, name, todayStr()]);
 
-  return { success: true, message: "Registered successfully" };
+  return {
+    success: true,
+    message: "Registered successfully"
+  };
 }
 
 /* ---------------- ATTENDANCE ---------------- */
 
 function markAttendance(id, name, status) {
   const sheet = getAttendanceSheet();
-  const data = sheet.getDataRange().getValues();
 
-  const today = Utilities.formatDate(new Date(), "Asia/Kolkata", "dd/MM/yyyy");
-  const now = Utilities.formatDate(new Date(), "Asia/Kolkata", "dd/MM/yyyy HH:mm:ss");
+  const today = todayStr();
+  const now = nowStr();
 
-  // prevent duplicate entry per day
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(id) && String(data[i][2]) === today) {
-      sheet.getRange(i + 1, 4).setValue(status);
-      sheet.getRange(i + 1, 5).setValue(now);
-      return { success: true, status };
+  const rowIndex = findTodayRow(sheet, id, today);
+
+  // If record exists
+  if (rowIndex !== -1) {
+    const existingStatus = sheet.getRange(rowIndex, 4).getValue();
+
+    if (existingStatus === status) {
+      return {
+        success: true,
+        message: "Already marked as " + status,
+        status
+      };
     }
+
+    sheet.getRange(rowIndex, 4).setValue(status);
+    sheet.getRange(rowIndex, 5).setValue(now);
+
+    return {
+      success: true,
+      message: "Updated to " + status,
+      status
+    };
   }
 
   sheet.appendRow([id, name, today, status, now]);
 
-  return { success: true, status };
+  return {
+    success: true,
+    message: "Marked " + status,
+    status
+  };
 }
 
 /* ---------------- BALANCE ---------------- */
@@ -133,8 +196,7 @@ function getBalance(id) {
     if (String(data[i][0]) !== String(id)) continue;
     if (data[i][3] !== "Leave") continue;
 
-    const parts = String(data[i][2]).split("/");
-    const d = new Date(parts[2], parts[1] - 1, parts[0]);
+    const d = new Date(normalizeDate(data[i][2]));
 
     if (d.getMonth() === cm && d.getFullYear() === cy) {
       used++;
@@ -145,7 +207,8 @@ function getBalance(id) {
     success: true,
     used,
     remaining: LEAVES_PER_MONTH - used,
-    total: LEAVES_PER_MONTH
+    total: LEAVES_PER_MONTH,
+    message: `Leave: ${used}/${LEAVES_PER_MONTH}, Remaining: ${LEAVES_PER_MONTH - used}`
   };
 }
 
@@ -164,8 +227,7 @@ function getStatus(id) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) !== String(id)) continue;
 
-    const parts = String(data[i][2]).split("/");
-    const d = new Date(parts[2], parts[1] - 1, parts[0]);
+    const d = new Date(normalizeDate(data[i][2]));
 
     if (d.getMonth() === cm && d.getFullYear() === cy) {
       if (data[i][3] === "Present") present++;
@@ -173,7 +235,12 @@ function getStatus(id) {
     }
   }
 
-  return { success: true, present, leave };
+  return {
+    success: true,
+    present,
+    leave,
+    message: `Present: ${present}, Leave: ${leave}`
+  };
 }
 
 /* ---------------- TEAM ---------------- */
@@ -182,12 +249,14 @@ function getTeam() {
   const emp = getEmployeesSheet().getDataRange().getValues();
   const att = getAttendanceSheet().getDataRange().getValues();
 
-  const today = Utilities.formatDate(new Date(), "Asia/Kolkata", "dd/MM/yyyy");
+  const today = todayStr();
 
   const map = {};
 
   for (let i = 1; i < att.length; i++) {
-    if (att[i][2] === today) {
+    const rowDate = normalizeDate(att[i][2]);
+
+    if (rowDate === today) {
       map[String(att[i][0])] = att[i][3];
     }
   }
@@ -237,8 +306,7 @@ function getReport() {
     for (let j = 1; j < att.length; j++) {
       if (String(att[j][0]) !== id) continue;
 
-      const parts = String(att[j][2]).split("/");
-      const d = new Date(parts[2], parts[1] - 1, parts[0]);
+      const d = new Date(normalizeDate(att[j][2]));
 
       if (d.getMonth() === cm && d.getFullYear() === cy) {
         if (att[j][3] === "Present") present++;
