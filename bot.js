@@ -8,6 +8,9 @@ const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID);
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
+const express = require("express");
+const app = express();
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function sheetRequest(payload) {
@@ -224,3 +227,21 @@ bot.onText(/\/balance/, async (msg) => {
 });
 
 console.log("TinkerHub Attendance Bot is running...");
+
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("TinkerHub Attendance Bot is running");
+});
+
+app.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});

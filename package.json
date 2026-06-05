@@ -2,10 +2,13 @@
   "name": "tinkerhub-attendance-bot",
   "version": "1.0.0",
   "main": "bot.js",
-  "scripts": { "start": "node bot.js" },
+  "scripts": {
+    "start": "node bot.js"
+  },
   "dependencies": {
-    "node-telegram-bot-api": "^0.66.0",
     "axios": "^1.6.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "node-telegram-bot-api": "^0.66.0"
   }
 }
