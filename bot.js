@@ -1,14 +1,22 @@
-require("dotenv").config();
+
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
 
-console.log("TOKEN CHECK:", process.env.BOT_TOKEN);
+console.log("ENV KEYS:", Object.keys(process.env));
+console.log("TOKEN START:", process.env.BOT_TOKEN?.slice(0, 10));
+console.log("TOKEN END:", process.env.BOT_TOKEN?.slice(-10));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
 const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID);
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+if (!BOT_TOKEN) {
+  throw new Error("BOT_TOKEN is missing in environment variables");
+}
+
+const bot = new TelegramBot(BOT_TOKEN, { polling: false });
+
+bot.startPolling();
 
 
 bot.getMe()
