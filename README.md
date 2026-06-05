@@ -1,6 +1,6 @@
 # TinkerHub Attendance Bot
 
-A Telegram bot for daily attendance tracking and leave management. Built for a team of ~10 employees.
+A Telegram bot for daily attendance tracking and leave management. Designed for small to medium sized teams.
 
 ## Architecture
 
@@ -73,6 +73,7 @@ To test with your own Telegram account as admin:
 ## Notes
 
 - Attendance records are idempotent: marking attendance twice on the same day updates the existing record rather than creating a duplicate
-- `/team` shows three states: Present, On Leave, Not Marked — giving the admin a complete picture without manual counting
+- `/team` shows three states: Present, On Leave, Not Marked - giving the admin a complete picture without manual counting
 - Leave balance resets at the start of each calendar month
 - Unused leaves do not carry over
+- The system automatically supports any number of employees because attendance and employee records are stored dynamically in Google Sheets. No code changes are required when new employees join.
