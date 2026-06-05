@@ -49,6 +49,8 @@ async function sheetRequest(payload) {
       headers: { "Content-Type": "application/json" },
       timeout: 10000
     });
+    console.log("RAW RESPONSE FROM APPS SCRIPT:", res.data);
+
     return res.data;
   } catch (err) {
     console.error("Sheet error:", err.message);
