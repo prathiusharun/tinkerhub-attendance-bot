@@ -22,6 +22,10 @@ if (!BOT_TOKEN) throw new Error("BOT_TOKEN missing");
 if (!APPS_SCRIPT_URL) throw new Error("APPS_SCRIPT_URL missing");
 if (!ADMIN_ID) throw new Error("ADMIN_TELEGRAM_ID missing");
 
+
+bot.on("message", (msg) => {
+  console.log("MESSAGE RECEIVED:", msg.text);
+});
 // ── MODE SWITCH ────────────────────────────────────
 const IS_PROD = process.env.NODE_ENV === "production";
 
