@@ -4,16 +4,28 @@ A Telegram bot for daily attendance tracking and leave management. Designed for 
 
 ## Architecture
 
-```
-Telegram Bot
-     |
-Inline Buttons (one tap attendance)
-     |
-Node.js Bot (Railway)
-     |
-Apps Script Web App
-     |
-Google Sheet (Attendance + Employees)
+```mermaid
+flowchart TD
+    U[Employee] --> T[Telegram Bot]
+    A[Administrator] --> T
+
+    T --> B[Node.js Bot Server]
+
+    B --> GS[Google Apps Script Web App]
+
+    GS --> E[(Employees Sheet)]
+    GS --> AT[(Attendance Sheet)]
+
+    B --> P[Attendance Actions]
+    B --> R[Reports]
+
+    P --> M1[Mark Present]
+    P --> M2[Mark Leave]
+    P --> M3[Check Balance]
+    P --> M4[View Status]
+
+    R --> R1[Team Status]
+    R --> R2[Monthly Report]
 ```
 
 ## Features
@@ -56,12 +68,29 @@ APPS_SCRIPT_URL=your_apps_script_web_app_url
 ADMIN_TELEGRAM_ID=your_telegram_user_id
 ```
 
-### 4. Deploy on Railway
-- Push this repo to GitHub
-- Create a new project on railway.app
-- Connect your GitHub repo
-- Add the three environment variables in Railway's Variables tab
-- Deploy
+### 4. Deploy
+
+The application can be deployed on Railway, Render, Koyeb, or any Node.js hosting platform.
+
+Required environment variables:
+
+BOT_TOKEN
+APPS_SCRIPT_URL
+ADMIN_TELEGRAM_ID
+
+## Why This Design?
+
+The solution was designed around two requirements:
+
+1. Frictionless attendance marking
+   - Employees can mark attendance with a single tap using Telegram inline buttons.
+   - No dashboards, forms, or additional logins are required.
+
+2. Real-time visibility
+   - Employees can instantly view leave balances and attendance history.
+   - Administrators can access team status and monthly reports without manual counting.
+
+The system intentionally uses Google Sheets as the data store to keep deployment and maintenance simple for small organizations.
 
 ## For Evaluators
 
