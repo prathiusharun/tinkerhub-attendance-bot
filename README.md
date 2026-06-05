@@ -1,108 +1,193 @@
 # TinkerHub Attendance Bot
 
-A Telegram bot for daily attendance tracking and leave management. Designed for small to medium sized teams.
+A production-style Telegram-based attendance and leave management system built using:
 
-## Architecture
+- Node.js (Telegram Bot API + Express)
+- Google Apps Script (Backend API layer)
+- Google Sheets (Database)
+- Render (Deployment)
+
+Live System: https://attendance-bot-qn86.onrender.com/
+Telegram Bot: @tinkerhub_attend_bot
+
+---
+
+## System Architecture
 
 ```mermaid
 flowchart TD
-    U[Employee] --> T[Telegram Bot]
-    A[Administrator] --> T
+    U[Employee / Admin] --> T[Telegram Bot]
 
-    T --> B[Node.js Bot Server]
+    T --> N[Node.js Bot Server - Render]
 
-    B --> GS[Google Apps Script Web App]
+    N --> A[Google Apps Script Web App]
 
-    GS --> E[(Employees Sheet)]
-    GS --> AT[(Attendance Sheet)]
+    A --> E[(Employees Sheet)]
+    A --> AT[(Attendance Sheet)]
 
-    B --> P[Attendance Actions]
-    B --> R[Reports]
+    N --> R1[Attendance Actions]
+    N --> R2[Reports Engine]
 
-    P --> M1[Mark Present]
-    P --> M2[Mark Leave]
-    P --> M3[Check Balance]
-    P --> M4[View Status]
+    R1 --> M1[Mark Present]
+    R1 --> M2[Mark Leave]
+    R1 --> M3[Balance Check]
+    R1 --> M4[Status Check]
 
-    R --> R1[Team Status]
-    R --> R2[Monthly Report]
+    R2 --> R3[Team Overview]
+    R2 --> R4[Monthly Reports]
 ```
+
+---
+
+## Tech Stack
+
+- Node.js (Telegram Bot via polling)
+- Express.js (health check server)
+- Google Apps Script (serverless backend API)
+- Google Sheets (data storage)
+- Axios (API communication)
+- Render (cloud deployment)
+
+---
 
 ## Features
 
-### Employee
-- `/start` — Register and get the attendance panel
-- One tap to mark Present or Leave
-- Check leave balance (4 per month, no carryover)
-- View personal attendance summary for the month
+### Employee Features
 
-### Admin
-- View real-time team status: Present / Leave / Not Marked
-- Generate monthly attendance report for all employees
+- `/start` — Register automatically
+- One-click attendance marking (Present / Leave)
+- Instant leave balance (4 leaves/month)
+- View personal monthly attendance summary
 
-## Setup
+### Admin Features
 
-### 1. Google Sheet
-Create a Google Sheet with two tabs:
+- Real-time team status: Present / On Leave / Not Marked
+- Monthly attendance reports for all employees
+- Full visibility of team activity
 
-**Employees**
+---
+
+## Google Sheet Structure
+
+**Employees Sheet:**
+
 | telegram_id | name | joined_date |
 
-**Attendance**
+**Attendance Sheet:**
+
 | telegram_id | name | date | status | timestamp |
 
-### 2. Apps Script
-- Open the sheet, go to Extensions > Apps Script
-- Paste the contents of `apps_script.gs`
-- Go to Project Settings > Script Properties
-- Add property: `ADMIN_TELEGRAM_ID` = your Telegram user ID
-- Click Deploy > New Deployment > Web App
-- Set "Who has access" to "Anyone"
+---
+
+## System Behavior
+
+- Each user can mark only one attendance per day
+- If same status is selected again — "Already marked as X"
+- If status changes — existing record is updated, not duplicated
+- All timestamps are stored in IST (Asia/Kolkata)
+- Leave balance resets every calendar month
+- Unused leaves do not carry forward
+
+---
+
+## API Actions (Apps Script Layer)
+
+- `register`
+- `markAttendance`
+- `getBalance`
+- `getStatus`
+- `getTeam`
+- `getReport`
+- `isRegistered`
+
+---
+
+## Setup Instructions
+
+### 1. Google Sheets Setup
+
+Create a Google Sheet with two tabs: Employees and Attendance.
+
+### 2. Apps Script Setup
+
+- Open Sheet > Extensions > Apps Script
+- Paste backend script
+- Deploy > Web App
+- Execute as: Me
+- Access: Anyone
 - Copy the Web App URL
 
 ### 3. Environment Variables
-Copy `.env.example` to `.env` and fill in:
+
 ```
 BOT_TOKEN=your_telegram_bot_token
-APPS_SCRIPT_URL=your_apps_script_web_app_url
-ADMIN_TELEGRAM_ID=your_telegram_user_id
+APPS_SCRIPT_URL=your_web_app_url
+ADMIN_TELEGRAM_ID=your_telegram_id
 ```
 
-### 4. Deploy
+### 4. Deploy on Render
 
-The application can be deployed on Railway, Render, Koyeb, or any Node.js hosting platform.
+- Push Node.js project to GitHub
+- Add environment variables in Render dashboard
+- Start service
 
-Required environment variables:
+---
 
-BOT_TOKEN
-APPS_SCRIPT_URL
-ADMIN_TELEGRAM_ID
+## Engineering Highlights
 
-## Why This Design?
+- Idempotent attendance system (no duplicate entries per day)
+- Hybrid backend architecture (Node.js + Apps Script)
+- Google Sheets used as lightweight database
+- Robust date normalisation across all layers
+- Safe retry handling for API failures
+- Single-click Telegram UX for minimal friction
 
-The solution was designed around two requirements:
+---
 
-1. Frictionless attendance marking
-   - Employees can mark attendance with a single tap using Telegram inline buttons.
-   - No dashboards, forms, or additional logins are required.
+## System Limitations
 
-2. Real-time visibility
-   - Employees can instantly view leave balances and attendance history.
-   - Administrators can access team status and monthly reports without manual counting.
+- Depends on Google Apps Script execution quotas
+- Performance may slow with large datasets (>10k rows)
+- Uses Telegram polling instead of webhook
+- No offline support
 
-The system intentionally uses Google Sheets as the data store to keep deployment and maintenance simple for small organizations.
+---
 
-## For Evaluators
+## Future Improvements
 
-To test with your own Telegram account as admin:
-1. Get your Telegram user ID by messaging @userinfobot
-2. Set `ADMIN_TELEGRAM_ID` to that value in Railway's Variables tab
-3. Redeploy
+- Telegram webhook migration
+- Admin dashboard (React / Next.js)
+- Attendance streak tracking
+- Monthly leaderboard
+- Export reports as PDF or CSV
+- Replace Sheets with PostgreSQL or Firebase
 
-## Notes
+---
 
-- Attendance records are idempotent: marking attendance twice on the same day updates the existing record rather than creating a duplicate
-- `/team` shows three states: Present, On Leave, Not Marked - giving the admin a complete picture without manual counting
-- Leave balance resets at the start of each calendar month
-- Unused leaves do not carry over
-- The system automatically supports any number of employees because attendance and employee records are stored dynamically in Google Sheets. No code changes are required when new employees join.
+## Testing Guide
+
+1. Start bot with `/start`
+2. Register as a user
+3. Mark Present or Leave
+4. Try duplicate marking
+5. Check balance and status
+6. Admin: test `/team` and `/report`
+
+---
+
+## Why This System Works
+
+- Zero-friction attendance tracking
+- Real-time team visibility
+- No external app dependency
+- Fast deployment using free tools
+
+Suitable for small teams, student organisations, hackathons, and internal company tools.
+
+---
+
+## Security Notes
+
+- Never expose `BOT_TOKEN`
+- Protect your Apps Script URL
+- Admin access is controlled via Telegram ID
