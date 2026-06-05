@@ -54,7 +54,7 @@ flowchart TD
 
 ### Employee Features
 
-- `/start` — Register automatically
+- `/start` - Register automatically
 - One-click attendance marking (Present / Leave)
 - Instant leave balance (4 leaves/month)
 - View personal monthly attendance summary
@@ -82,8 +82,8 @@ flowchart TD
 ## System Behavior
 
 - Each user can mark only one attendance per day
-- If same status is selected again — "Already marked as X"
-- If status changes — existing record is updated, not duplicated
+- If same status is selected again - "Already marked as X"
+- If status changes - existing record is updated, not duplicated
 - All timestamps are stored in IST (Asia/Kolkata)
 - Leave balance resets every calendar month
 - Unused leaves do not carry forward
