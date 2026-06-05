@@ -23,15 +23,16 @@ if (!APPS_SCRIPT_URL) throw new Error("APPS_SCRIPT_URL missing");
 if (!ADMIN_ID) throw new Error("ADMIN_TELEGRAM_ID missing");
 
 
-bot.on("message", (msg) => {
-  console.log("MESSAGE RECEIVED:", msg.text);
-});
+
 // ── MODE SWITCH ────────────────────────────────────
 const IS_PROD = process.env.NODE_ENV === "production";
 
 // ── BOT INIT ────────────────────────────────────────
 const bot = new TelegramBot(BOT_TOKEN, {
   polling: !IS_PROD
+});
+bot.on("message", (msg) => {
+  console.log("MESSAGE RECEIVED:", msg.text);
 });
 
 // IMPORTANT: prevent webhook conflicts
