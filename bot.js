@@ -8,8 +8,26 @@ const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID);
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
+
+bot.getMe()
+  .then((me) => {
+    console.log("Logged in as:", me.username);
+  })
+  .catch((err) => {
+    console.error("Telegram connection failed:", err);
+  });
+
+bot.on("polling_error", (err) => {
+  console.error("Polling error:", err);
+});
+
+bot.on("error", (err) => {
+  console.error("Bot error:", err);
+});
+
 const express = require("express");
 const app = express();
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
