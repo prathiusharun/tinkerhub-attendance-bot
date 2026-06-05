@@ -2,6 +2,8 @@ require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
 
+console.log("TOKEN CHECK:", process.env.BOT_TOKEN);
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
 const ADMIN_ID = String(process.env.ADMIN_TELEGRAM_ID);
